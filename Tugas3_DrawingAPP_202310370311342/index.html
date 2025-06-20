@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Canvas 2D Toolbar Atas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #f2f2f2;
+      color: #333;
+    }
+
+    .toolbar {
+      background: #ffffff;
+      padding: 16px 24px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .toolbar h2 {
+      font-size: 18px;
+      color: #5a4fcf;
+      margin: 0;
+      margin-right: 20px;
+    }
+
+    .group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .group label {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .group select,
+    .group input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .toolbar button {
+      padding: 8px 12px;
+      font-weight: bold;
+      background-color: #5a4fcf;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toolbar button:hover {
+      background-color: #483fd6;
+    }
+
+    #canvas {
+      flex: 1;
+      background: #ffffff;
+      display: block;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h2>🖌️ Paint Pro </h2>
+
+    <div class="group">
+      <label for="shape">Bentuk</label>
+      <select id="shape">
+        <option value="point">Titik</option>
+        <option value="line">Garis</option>
+        <option value="rect">Persegi</option>
+        <option value="ellipse">Elips</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <label for="color">Warna</label>
+      <input type="color" id="color" value="#1abc9c" />
+    </div>
+
+    <div class="group">
+      <label for="thickness">Ketebalan</label>
+      <input type="number" id="thickness" value="2" min="1" />
+    </div>
+
+    <div class="group">
+      <label for="transform">Transformasi</label>
+      <select id="transform">
+        <option value="none">Tidak Ada</option>
+        <option value="translate">Translasi</option>
+        <option value="rotate">Rotasi</option>
+        <option value="scale">Skala</option>
+      </select>
+    </div>
+
+    <button onclick="resetCanvas()">🔁 Reset</button>
+  </div>
+
+  <canvas id="canvas" width="800" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const shape = document.getElementById("shape");
+    const color = document.getElementById("color");
+    const thickness = document.getElementById("thickness");
+    const transform = document.getElementById("transform");
+
+    let startX = null;
+    let startY = null;
+
+    function applyTransform() {
+      if (transform.value === "translate") {
+        ctx.translate(20, 20);
+      } else if (transform.value === "rotate") {
+        ctx.translate(startX, startY);
+        ctx.rotate((30 * Math.PI) / 180);
+        ctx.translate(-startX, -startY);
+      } else if (transform.value === "scale") {
+        ctx.translate(startX, startY);
+        ctx.scale(1.5, 1.5);
+        ctx.translate(-startX, -startY);
+      }
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (shape.value === "point") {
+        drawPoint(x, y);
+      } else {
+        startX = x;
+        startY = y;
+        canvas.addEventListener("mouseup", drawShape);
+      }
+    });
+
+    function drawShape(e) {
+      canvas.removeEventListener("mouseup", drawShape);
+      const rect = canvas.getBoundingClientRect();
+      const endX = e.clientX - rect.left;
+      const endY = e.clientY - rect.top;
+
+      ctx.save();
+      applyTransform();
+      ctx.strokeStyle = color.value;
+      ctx.lineWidth = thickness.value;
+
+      switch (shape.value) {
+        case "line":
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+          break;
+        case "rect":
+          ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+          break;
+        case "ellipse":
+          ctx.beginPath();
+          ctx.ellipse(
+            (startX + endX) / 2,
+            (startY + endY) / 2,
+            Math.abs(endX - startX) / 2,
+            Math.abs(endY - startY) / 2,
+            0, 0, 2 * Math.PI
+          );
+          ctx.stroke();
+          break;
+      }
+
+      ctx.restore();
+    }
+
+    function drawPoint(x, y) {
+      ctx.save();
+      applyTransform();
+      ctx.fillStyle = color.value;
+      ctx.beginPath();
+      ctx.arc(x, y, thickness.value, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function resetCanvas() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+</body>
+</html>
